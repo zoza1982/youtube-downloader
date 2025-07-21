@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  ytd:
+    build: .
+    image: youtube-downloader:latest
+    container_name: youtube-downloader
+    volumes:
+      # Mount local downloads directory
+      - ./downloads:/downloads
+      # Optional: Mount config directory
+      - ./config:/home/ytduser/.config/ytd
+    environment:
+      # Optional: Set any environment variables
+      - PYTHONUNBUFFERED=1
+    # Remove default CMD to allow passing commands
+    command: []
+    # For interactive use
+    stdin_open: true
+    tty: true
+    # Run as non-root user (matching Dockerfile)
+    user: ytduser
+    
+  # Utility service for one-off downloads
+  ytd-download:
+    build: .
+    image: youtube-downloader:latest
+    volumes:
+      - ./downloads:/downloads
+      - ./config:/home/ytduser/.config/ytd
+    environment:
+      - PYTHONUNBUFFERED=1
+    # This service expects URL as environment variable
+    command: ${YTD_URL:-https://youtube.com/watch?v=dQw4w9WgXcQ} ${YTD_ARGS:-}
+    profiles:
+      - download

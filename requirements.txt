@@ -1,0 +1,5 @@
+yt-dlp>=2024.1.0
+colorama>=0.4.6
+tqdm>=4.66.0
+validators>=0.22.0
+PyYAML>=6.0.1

@@ -1,0 +1,59 @@
+# Multi-stage build for smaller image
+# Stage 1: Builder
+FROM python:3.11-slim as builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy and install requirements
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy project and install
+COPY . /app
+WORKDIR /app
+RUN pip install --no-cache-dir -e .
+
+# Stage 2: Runtime (Alpine-based for smaller size)
+FROM python:3.11-alpine
+
+# Install runtime dependencies
+RUN apk add --no-cache \
+    ffmpeg \
+    bash \
+    git
+
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy application
+COPY --from=builder /app /app
+WORKDIR /app
+
+# Create downloads directory
+RUN mkdir -p /downloads
+
+# Create non-root user
+RUN adduser -D -u 1000 ytduser && \
+    chown -R ytduser:ytduser /app /downloads
+
+# Copy entrypoint script
+COPY --chown=ytduser:ytduser docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Switch to non-root user
+USER ytduser
+
+# Set working directory
+WORKDIR /downloads
+
+# Use custom entrypoint
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+CMD []
