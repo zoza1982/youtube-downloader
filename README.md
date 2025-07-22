@@ -2,6 +2,21 @@
 
 A powerful and user-friendly command-line tool for downloading YouTube videos, playlists, and audio using the robust yt-dlp library.
 
+## 🚀 Quick Start with Docker
+
+```bash
+# Download a video (no installation required!)
+docker run --rm -v $(pwd)/downloads:/downloads ghcr.io/zoza1982/youtube-downloader:latest https://youtube.com/watch?v=dQw4w9WgXcQ
+
+# Download audio as MP3
+docker run --rm -v $(pwd)/downloads:/downloads ghcr.io/zoza1982/youtube-downloader:latest https://youtube.com/watch?v=dQw4w9WgXcQ -a
+
+# Download with subtitles
+docker run --rm -v $(pwd)/downloads:/downloads ghcr.io/zoza1982/youtube-downloader:latest https://youtube.com/watch?v=dQw4w9WgXcQ -s --sub-langs en
+```
+
+**Pro tip**: Add this alias to your shell: `alias ytd='docker run --rm -v $(pwd)/downloads:/downloads ghcr.io/zoza1982/youtube-downloader:latest'`
+
 ## Table of Contents
 
 - [Features](#features)
@@ -124,33 +139,69 @@ pip install youtube-downloader-cli
 
 ### Using Docker/Podman
 
-The application can be run in a container using Docker or Podman.
+The easiest way to use YouTube Downloader is with our pre-built Docker images from GitHub Container Registry.
 
-#### Build the image
+#### Quick Start (No Build Required!)
 
 ```bash
-# Using Docker or Podman (aliased as docker)
+# Pull the image (optional, docker run will do this automatically)
+docker pull ghcr.io/zoza1982/youtube-downloader:latest
+
+# Download a video
+docker run --rm -v $(pwd)/downloads:/downloads ghcr.io/zoza1982/youtube-downloader:latest https://youtube.com/watch?v=dQw4w9WgXcQ
+
+# Download audio only (MP3)
+docker run --rm -v $(pwd)/downloads:/downloads ghcr.io/zoza1982/youtube-downloader:latest https://youtube.com/watch?v=dQw4w9WgXcQ -a
+
+# Download with subtitles
+docker run --rm -v $(pwd)/downloads:/downloads ghcr.io/zoza1982/youtube-downloader:latest https://youtube.com/watch?v=dQw4w9WgXcQ -s --sub-langs en
+
+# Download 1080p with Croatian subtitles converted to SRT
+docker run --rm -v $(pwd)/downloads:/downloads ghcr.io/zoza1982/youtube-downloader:latest https://youtube.com/watch?v=VIDEO_ID -f best[height=1080] -s --sub-langs hr --convert-subs srt
+
+# Interactive mode (for multiple downloads)
+docker run -it --rm -v $(pwd)/downloads:/downloads ghcr.io/zoza1982/youtube-downloader:latest
+# Then use ytd commands inside container
+```
+
+#### Using Alpine Version (Smaller Image)
+
+```bash
+# Use Alpine version for smaller download size
+docker pull ghcr.io/zoza1982/youtube-downloader:alpine
+
+# Run with Alpine image
+docker run --rm -v $(pwd)/downloads:/downloads ghcr.io/zoza1982/youtube-downloader:alpine https://youtube.com/watch?v=VIDEO_ID
+```
+
+#### Create Alias for Easy Use
+
+Add this to your `.bashrc` or `.zshrc`:
+
+```bash
+# YouTube Downloader alias
+alias ytd='docker run --rm -v $(pwd)/downloads:/downloads ghcr.io/zoza1982/youtube-downloader:latest'
+
+# Then use it like a native command:
+ytd https://youtube.com/watch?v=VIDEO_ID
+ytd https://youtube.com/watch?v=VIDEO_ID -a --audio-format mp3
+ytd --help
+```
+
+#### Build Your Own Image (Optional)
+
+If you want to build the image yourself:
+
+```bash
+# Clone the repository
+git clone https://github.com/zoza1982/youtube-downloader.git
+cd youtube-downloader
+
+# Build the image
 docker build -t youtube-downloader .
 
 # Or using docker-compose
 docker-compose build
-```
-
-#### Run with Docker
-
-```bash
-# Download a video
-docker run -v $(pwd)/downloads:/downloads youtube-downloader https://youtube.com/watch?v=VIDEO_ID
-
-# Download audio only
-docker run -v $(pwd)/downloads:/downloads youtube-downloader https://youtube.com/watch?v=VIDEO_ID -a
-
-# Download with subtitles
-docker run -v $(pwd)/downloads:/downloads youtube-downloader https://youtube.com/watch?v=VIDEO_ID -s --sub-langs en
-
-# Interactive mode (for multiple downloads)
-docker run -it -v $(pwd)/downloads:/downloads youtube-downloader bash
-# Then use ytd command inside container
 ```
 
 #### Run with docker-compose
@@ -174,14 +225,17 @@ YTD_URL="https://youtube.com/watch?v=VIDEO_ID" docker-compose --profile download
 Since you're using Podman aliased as docker, everything should work the same. For rootless podman:
 
 ```bash
-# Build with podman
-podman build -t youtube-downloader .
+# Pull from GitHub Container Registry
+podman pull ghcr.io/zoza1982/youtube-downloader:latest
 
 # Run with podman (note: podman runs rootless by default)
-podman run -v $(pwd)/downloads:/downloads:Z youtube-downloader https://youtube.com/watch?v=VIDEO_ID
+podman run --rm -v $(pwd)/downloads:/downloads:Z ghcr.io/zoza1982/youtube-downloader:latest https://youtube.com/watch?v=VIDEO_ID
+
+# The convenience script auto-detects podman
+./run-docker.sh https://youtube.com/watch?v=VIDEO_ID
 ```
 
-The `:Z` flag is important for SELinux systems to properly handle volume permissions.
+The `:Z` flag is important for SELinux systems to properly handle volume permissions. The `run-docker.sh` script automatically adds this flag when using Podman on Linux.
 
 #### Using the convenience script
 
@@ -578,18 +632,30 @@ python merge_subtitles.py --batch downloads/
 
 ### Using Docker/Podman
 ```bash
-# Quick download with Docker
+# Quick download with pre-built image
+docker run --rm -v $(pwd)/downloads:/downloads ghcr.io/zoza1982/youtube-downloader:latest https://youtube.com/watch?v=VIDEO_ID
+
+# Using the convenience script (auto-pulls from ghcr.io)
 ./run-docker.sh https://youtube.com/watch?v=VIDEO_ID
 
 # Download audio only
 ./run-docker.sh https://youtube.com/watch?v=VIDEO_ID -a
 
+# Download with Croatian subtitles as SRT
+./run-docker.sh https://youtube.com/watch?v=VIDEO_ID -s --sub-langs hr --convert-subs srt
+
 # Interactive mode for multiple downloads
 ./run-docker.sh
 # Then use ytd commands inside the container
 
-# Using docker-compose
-YTD_URL="https://youtube.com/watch?v=VIDEO_ID" docker-compose run --rm ytd
+# Using docker-compose (pulls from ghcr.io automatically)
+docker-compose run --rm ytd https://youtube.com/watch?v=VIDEO_ID
+
+# One-off download with docker-compose
+YTD_URL="https://youtube.com/watch?v=VIDEO_ID" YTD_ARGS="-a" docker-compose run --rm ytd-download
+
+# Use local build instead of pre-built image
+USE_LOCAL_BUILD=true ./run-docker.sh https://youtube.com/watch?v=VIDEO_ID
 ```
 
 ### Batch download with archive

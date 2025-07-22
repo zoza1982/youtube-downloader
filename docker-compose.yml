@@ -2,8 +2,8 @@ version: '3.8'
 
 services:
   ytd:
-    build: .
-    image: youtube-downloader:latest
+    # Use pre-built image from GitHub Container Registry
+    image: ghcr.io/zoza1982/youtube-downloader:latest
     container_name: youtube-downloader
     volumes:
       # Mount local downloads directory
@@ -23,8 +23,7 @@ services:
     
   # Utility service for one-off downloads
   ytd-download:
-    build: .
-    image: youtube-downloader:latest
+    image: ghcr.io/zoza1982/youtube-downloader:latest
     volumes:
       - ./downloads:/downloads
       - ./config:/home/ytduser/.config/ytd
@@ -34,3 +33,19 @@ services:
     command: ${YTD_URL:-https://youtube.com/watch?v=dQw4w9WgXcQ} ${YTD_ARGS:-}
     profiles:
       - download
+
+  # Local build service (for development)
+  ytd-local:
+    build: .
+    image: youtube-downloader:local
+    volumes:
+      - ./downloads:/downloads
+      - ./config:/home/ytduser/.config/ytd
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: []
+    stdin_open: true
+    tty: true
+    user: ytduser
+    profiles:
+      - local
