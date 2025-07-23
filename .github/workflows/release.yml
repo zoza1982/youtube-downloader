@@ -1,0 +1,263 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags like v1.0.0
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  build-windows:
+    name: Build Windows Binary
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+      
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller ytd.spec --clean
+      
+      - name: Create distribution package
+        run: |
+          mkdir dist\ytd-windows
+          copy dist\ytd.exe dist\ytd-windows\
+          echo YouTube Downloader CLI for Windows > dist\ytd-windows\README.txt
+      
+      - name: Create ZIP
+        run: |
+          cd dist
+          7z a -tzip ytd-windows.zip ytd-windows
+          cd ..
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-binary
+          path: |
+            dist/ytd.exe
+            dist/ytd-windows.zip
+  
+  build-macos:
+    name: Build macOS Binary
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+      
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller ytd.spec --clean
+      
+      - name: Create distribution package
+        run: |
+          mkdir -p dist/ytd-macos
+          cp dist/ytd dist/ytd-macos/
+          if [ -d "dist/ytd.app" ]; then
+            cp -r dist/ytd.app dist/ytd-macos/
+          fi
+          
+          cat > dist/ytd-macos/README.txt << 'EOF'
+          YouTube Downloader CLI for macOS
+          
+          Installation:
+          1. Copy 'ytd' to /usr/local/bin/ or add to your PATH
+             sudo cp ytd /usr/local/bin/
+          
+          Usage: ytd [URL] [options]
+          EOF
+          
+          chmod +x dist/ytd-macos/ytd
+      
+      - name: Create ZIP and DMG
+        run: |
+          cd dist
+          zip -r ytd-macos.zip ytd-macos
+          hdiutil create -volname "YouTube Downloader" -srcfolder ytd-macos -ov -format UDZO ytd-macos.dmg
+          cd ..
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-binary
+          path: |
+            dist/ytd
+            dist/ytd-macos.zip
+            dist/ytd-macos.dmg
+  
+  build-linux:
+    name: Build Linux Binary
+    runs-on: ubuntu-20.04  # Use older Ubuntu for better compatibility
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y patchelf
+      
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+          pip install staticx  # For static binaries
+      
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller ytd.spec --clean
+      
+      - name: Create static binary
+        run: |
+          # Make the binary more portable
+          staticx dist/ytd dist/ytd-static || cp dist/ytd dist/ytd-static
+          mv dist/ytd-static dist/ytd
+          chmod +x dist/ytd
+      
+      - name: Create distribution package
+        run: |
+          mkdir -p dist/ytd-linux
+          cp dist/ytd dist/ytd-linux/
+          
+          cat > dist/ytd-linux/README.txt << 'EOF'
+          YouTube Downloader CLI for Linux
+          
+          Installation:
+          1. Copy 'ytd' to /usr/local/bin/ or ~/.local/bin/
+             sudo cp ytd /usr/local/bin/
+          
+          Usage: ytd [URL] [options]
+          
+          This binary should work on most Linux distributions (x86_64).
+          EOF
+          
+          chmod +x dist/ytd-linux/ytd
+      
+      - name: Create tarball
+        run: |
+          cd dist
+          tar -czf ytd-linux.tar.gz ytd-linux
+          cd ..
+      
+      - name: Create .deb package
+        run: |
+          mkdir -p dist/ytd-deb/DEBIAN
+          mkdir -p dist/ytd-deb/usr/local/bin
+          cp dist/ytd dist/ytd-deb/usr/local/bin/
+          
+          cat > dist/ytd-deb/DEBIAN/control << EOF
+          Package: youtube-downloader
+          Version: ${GITHUB_REF_NAME#v}
+          Section: utils
+          Priority: optional
+          Architecture: amd64
+          Maintainer: YouTube Downloader Contributors
+          Description: Command-line YouTube and video downloader
+           Download videos from YouTube and 1700+ other sites.
+          EOF
+          
+          dpkg-deb --build dist/ytd-deb dist/youtube-downloader_${GITHUB_REF_NAME#v}_amd64.deb
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux-binary
+          path: |
+            dist/ytd
+            dist/ytd-linux.tar.gz
+            dist/youtube-downloader_*.deb
+  
+  create-release:
+    name: Create Release
+    needs: [build-windows, build-macos, build-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+      
+      - name: Create Release Notes
+        run: |
+          cat > RELEASE_NOTES.md << 'EOF'
+          # YouTube Downloader CLI - Release ${GITHUB_REF_NAME}
+          
+          ## Installation
+          
+          ### Windows
+          1. Download `ytd-windows.zip`
+          2. Extract and run `ytd.exe`
+          
+          ### macOS
+          1. Download `ytd-macos.zip` or `ytd-macos.dmg`
+          2. Extract/mount and copy `ytd` to `/usr/local/bin/`
+          
+          ### Linux
+          1. Download `ytd-linux.tar.gz` or `.deb` package
+          2. Extract and install using included instructions
+          
+          ## Features
+          - Download from YouTube and 1700+ sites
+          - Audio extraction (MP3, M4A, etc.)
+          - Subtitle download and conversion
+          - Playlist support
+          - Resume capability
+          
+          ## Usage
+          ```bash
+          ytd https://youtube.com/watch?v=VIDEO_ID
+          ytd --help
+          ```
+          
+          ## Checksums
+          EOF
+          
+          # Generate checksums
+          echo "### SHA256 Checksums" >> RELEASE_NOTES.md
+          echo '```' >> RELEASE_NOTES.md
+          find . -name "ytd-*.zip" -o -name "ytd-*.tar.gz" -o -name "*.deb" -o -name "*.dmg" | xargs sha256sum >> RELEASE_NOTES.md
+          echo '```' >> RELEASE_NOTES.md
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: RELEASE_NOTES.md
+          files: |
+            windows-binary/ytd.exe
+            windows-binary/ytd-windows.zip
+            macos-binary/ytd
+            macos-binary/ytd-macos.zip
+            macos-binary/ytd-macos.dmg
+            linux-binary/ytd
+            linux-binary/ytd-linux.tar.gz
+            linux-binary/youtube-downloader_*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

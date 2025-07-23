@@ -9,25 +9,22 @@ import sys
 from pathlib import Path
 import shutil
 import json
+try:
+    from .ffmpeg_helper import ensure_ffmpeg, get_ffmpeg_command
+except ImportError:
+    from ffmpeg_helper import ensure_ffmpeg, get_ffmpeg_command
 
 
 def check_ffmpeg():
     """Check if ffmpeg is installed"""
-    if not shutil.which('ffmpeg'):
-        print("Error: ffmpeg is not installed.")
-        print("Please install ffmpeg:")
-        print("  macOS: brew install ffmpeg")
-        print("  Ubuntu/Debian: sudo apt install ffmpeg")
-        print("  Windows: Download from https://ffmpeg.org/download.html")
-        return False
-    return True
+    return ensure_ffmpeg()
 
 
 def get_video_info(video_path):
     """Get video information using ffprobe"""
     try:
         cmd = [
-            'ffprobe',
+            get_ffmpeg_command().replace('ffmpeg', 'ffprobe'),
             '-v', 'quiet',
             '-print_format', 'json',
             '-show_streams',
@@ -99,7 +96,7 @@ def merge_subtitles(video_path, subtitle_path, output_path=None,
     if soft_subs:
         # Embed subtitles as a separate track (soft subs)
         cmd = [
-            'ffmpeg',
+            get_ffmpeg_command(),
             '-i', str(video_path),
             '-i', str(subtitle_path),
             '-c:v', 'copy',  # Copy video codec
@@ -124,7 +121,7 @@ def merge_subtitles(video_path, subtitle_path, output_path=None,
         subtitle_filter = f"subtitles='{str(subtitle_path).replace('\\', '\\\\').replace(':', '\\:')}'"
         
         cmd = [
-            'ffmpeg',
+            get_ffmpeg_command(),
             '-i', str(video_path),
             '-vf', subtitle_filter,
             '-c:a', 'copy',  # Copy audio codec

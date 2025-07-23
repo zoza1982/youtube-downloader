@@ -74,13 +74,29 @@ ytd --list-extractors
 
 ## Installation
 
-### Prerequisites
+### Option 1: Download Pre-built Binary (Easiest)
+
+Download the latest release for your platform from the [Releases page](https://github.com/zoza1982/youtube-downloader/releases):
+
+- **Windows**: Download `ytd-windows.zip`
+- **macOS**: Download `ytd-macos.zip` or `ytd-macos.dmg`
+- **Linux**: Download `ytd-linux.tar.gz` or `.deb` package
+
+No Python installation required! The binaries include all dependencies.
+
+### Option 2: Install from Source
+
+#### Prerequisites
 
 - Python 3.8 or higher
 - pip package manager
 - ffmpeg (for audio conversion and video/audio merging)
 
-### Installing ffmpeg
+#### Installing ffmpeg
+
+Note: The pre-built binaries can automatically download ffmpeg if not found on your system.
+
+Manual installation:
 
 **macOS:**
 ```bash
