@@ -40,7 +40,7 @@ jobs:
       
       - name: Test PyInstaller build
         run: |
-          pyinstaller --onefile --name ytd-test ytd/cli.py
+          pyinstaller --onefile --name ytd-test ytd_main.py
       
       - name: Test built executable (Unix)
         if: runner.os != 'Windows'

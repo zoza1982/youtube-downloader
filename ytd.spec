@@ -19,19 +19,25 @@ APP_VERSION = '1.0.0'
 APP_DESCRIPTION = 'YouTube Downloader CLI - Download videos from YouTube and 1700+ sites'
 
 # Collect all yt-dlp extractors (needed for multi-site support)
-hiddenimports = collect_submodules('yt_dlp.extractor') + [
+hiddenimports = collect_submodules('yt_dlp.extractor') + collect_submodules('yt_dlp.downloader') + collect_submodules('yt_dlp.postprocessor') + [
     'yt_dlp',
     'yt_dlp.downloader',
     'yt_dlp.postprocessor',
     'yt_dlp.extractor.common',
+    'yt_dlp.extractor.generic',
     'yt_dlp.utils',
     'yt_dlp.options',
     'yt_dlp.version',
+    'yt_dlp.YoutubeDL',
     'certifi',
     'brotli',
     'mutagen',
     'websockets',
     'secretstorage',
+    'validators',
+    'tqdm',
+    'colorama',
+    'yaml',
 ]
 
 # Data files to include
@@ -58,7 +64,7 @@ else:
 
 # Analysis configuration
 a = Analysis(
-    ['ytd/cli.py'],
+    ['ytd_main.py'],  # Use standalone entry point to avoid import issues
     pathex=[os.path.abspath('.')],
     binaries=binaries,
     datas=datas,
