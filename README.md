@@ -1,6 +1,6 @@
 # YouTube Downloader CLI
 
-A powerful and user-friendly command-line tool for downloading YouTube videos, playlists, and audio using the robust yt-dlp library.
+A powerful and user-friendly command-line tool for downloading videos from YouTube and 1700+ other video platforms using the robust yt-dlp library.
 
 ## 🚀 Quick Start with Docker
 
@@ -39,6 +39,7 @@ docker run --rm -v $(pwd)/downloads:/downloads ghcr.io/zoza1982/youtube-download
 
 ## Features
 
+- 🌐 **1700+ Supported Sites**: Works with YouTube, Twitter/X, Facebook, Instagram, TikTok, and many more
 - 📹 **Video Downloads**: Download videos in various qualities and formats
 - 🎵 **Audio Extraction**: Extract audio in MP3, M4A, OPUS, and more formats
 - 📑 **Playlist Support**: Download entire playlists with customizable selection
@@ -53,6 +54,23 @@ docker run --rm -v $(pwd)/downloads:/downloads ghcr.io/zoza1982/youtube-download
 - 🔧 **Configurable**: Support for configuration files
 - 🐳 **Docker/Podman Support**: Run in containers with easy deployment
 - 🔒 **Security**: Runs as non-root user in containers
+
+## Supported Sites
+
+This tool supports **1700+ video platforms** including:
+
+- **Video Platforms**: YouTube, Vimeo, Dailymotion, Twitch
+- **Social Media**: Twitter/X, Facebook, Instagram, TikTok, Reddit
+- **Music**: SoundCloud, Bandcamp, Mixcloud
+- **Educational**: Coursera, Udemy, TED, Khan Academy
+- **News**: BBC, CNN, NBC, Fox News
+- **Adult Content**: pornhub, xvideos, and many others
+- **And 1700+ more sites!**
+
+To see all supported sites:
+```bash
+ytd --list-extractors
+```
 
 ## Installation
 
@@ -370,6 +388,7 @@ ytd https://youtube.com/watch?v=VIDEO_ID --list-formats
 - `--no-progress`: Disable progress bar
 - `--archive FILE`: Track downloaded videos
 - `--cookies FILE`: Cookies file path
+- `--list-extractors`: List all supported video sites
 - `--version`: Show version
 
 ## Configuration

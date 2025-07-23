@@ -26,7 +26,8 @@ def create_parser() -> argparse.ArgumentParser:
     # Positional argument
     parser.add_argument(
         'url',
-        help='YouTube video or playlist URL'
+        nargs='?',  # Make URL optional for commands like --list-extractors
+        help='Video or playlist URL (supports 1700+ sites including YouTube)'
     )
     
     # Output options
@@ -174,6 +175,11 @@ def create_parser() -> argparse.ArgumentParser:
         help='Path to cookies file'
     )
     other_group.add_argument(
+        '--list-extractors',
+        action='store_true',
+        help='List all supported video sites/extractors'
+    )
+    other_group.add_argument(
         '--version',
         action='version',
         version=f'%(prog)s {__version__}'
@@ -183,12 +189,10 @@ def create_parser() -> argparse.ArgumentParser:
 
 
 def validate_url(url: str) -> bool:
-    """Validate YouTube URL"""
-    if not validators.url(url):
-        return False
-    
-    youtube_domains = ['youtube.com', 'youtu.be', 'youtube-nocookie.com']
-    return any(domain in url for domain in youtube_domains)
+    """Validate URL - now supports all sites that yt-dlp supports"""
+    # Just check if it's a valid URL format
+    # yt-dlp will handle checking if the site is supported
+    return validators.url(url)
 
 
 def print_error(message: str) -> None:
@@ -214,9 +218,41 @@ def main() -> int:
     # Setup logging
     logger = setup_logger(verbose=args.verbose, quiet=args.quiet)
     
+    # Handle list extractors request (doesn't need URL)
+    if args.list_extractors:
+        import yt_dlp
+        print_info("Supported video sites/extractors:")
+        print("\nYt-dlp supports 1700+ websites including:")
+        
+        # Show some popular examples
+        popular_sites = [
+            "YouTube", "YouTube Playlists", "YouTube Shorts",
+            "Twitter/X", "Facebook", "Instagram", "TikTok",
+            "Vimeo", "Dailymotion", "Twitch", "Reddit",
+            "SoundCloud", "Bandcamp", "Mixcloud",
+            "BBC", "CNN", "TED", "Coursera", "Udemy",
+            "pornhub", "xvideos", "PeerTube instances",
+            "And 1700+ more sites!"
+        ]
+        
+        for site in popular_sites:
+            print(f"  • {site}")
+        
+        print("\nFor a complete list, run:")
+        print("  yt-dlp --list-extractors")
+        print("\nFor details about a specific site:")
+        print("  yt-dlp --extractor-descriptions")
+        return 0
+    
+    # Check if URL is required (not needed for some commands)
+    if not args.url:
+        print_error("URL is required")
+        parser.print_help()
+        return 1
+    
     # Validate URL
     if not validate_url(args.url):
-        print_error("Invalid YouTube URL")
+        print_error("Invalid URL format")
         return 1
     
     # Load configuration
