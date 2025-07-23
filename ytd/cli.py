@@ -309,6 +309,14 @@ def main() -> int:
                 print("No subtitles available for this video")
             return 0
         
+        # Check if trying to download video/audio with subtitles
+        if args.subtitles and not args.skip_download:
+            print_error("Downloading video and subtitles together is not supported due to rate limiting.")
+            print_info("Please download them separately:")
+            print_info("  1. Download video: ytd URL")
+            print_info("  2. Download subtitles: ytd URL -s --sub-langs LANG --skip-download")
+            return 1
+        
         # Perform download
         print_info(f"Starting download: {args.url}")
         

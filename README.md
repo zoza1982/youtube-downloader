@@ -11,8 +11,8 @@ docker run --rm -v $(pwd)/downloads:/downloads ghcr.io/zoza1982/youtube-download
 # Download audio as MP3
 docker run --rm -v $(pwd)/downloads:/downloads ghcr.io/zoza1982/youtube-downloader:latest https://youtube.com/watch?v=dQw4w9WgXcQ -a
 
-# Download with subtitles
-docker run --rm -v $(pwd)/downloads:/downloads ghcr.io/zoza1982/youtube-downloader:latest https://youtube.com/watch?v=dQw4w9WgXcQ -s --sub-langs en
+# Download subtitles only (video and subtitles must be downloaded separately)
+docker run --rm -v $(pwd)/downloads:/downloads ghcr.io/zoza1982/youtube-downloader:latest https://youtube.com/watch?v=dQw4w9WgXcQ -s --sub-langs en --skip-download
 ```
 
 **Pro tip**: Add this alias to your shell: `alias ytd='docker run --rm -v $(pwd)/downloads:/downloads ghcr.io/zoza1982/youtube-downloader:latest'`
@@ -171,8 +171,8 @@ docker run --rm -v $(pwd)/downloads:/downloads ghcr.io/zoza1982/youtube-download
 # Download audio only (MP3)
 docker run --rm -v $(pwd)/downloads:/downloads ghcr.io/zoza1982/youtube-downloader:latest https://youtube.com/watch?v=dQw4w9WgXcQ -a
 
-# Download with subtitles
-docker run --rm -v $(pwd)/downloads:/downloads ghcr.io/zoza1982/youtube-downloader:latest https://youtube.com/watch?v=dQw4w9WgXcQ -s --sub-langs en
+# Download subtitles only (video and subtitles must be downloaded separately)
+docker run --rm -v $(pwd)/downloads:/downloads ghcr.io/zoza1982/youtube-downloader:latest https://youtube.com/watch?v=dQw4w9WgXcQ -s --sub-langs en --skip-download
 
 # Download 1080p with Croatian subtitles converted to SRT
 docker run --rm -v $(pwd)/downloads:/downloads ghcr.io/zoza1982/youtube-downloader:latest https://youtube.com/watch?v=VIDEO_ID -f best[height=1080] -s --sub-langs hr --convert-subs srt
@@ -417,18 +417,24 @@ ytd https://youtube.com/watch?v=VIDEO_ID --list-subs
 ```
 
 #### Downloading Subtitles
+
+**Important**: Due to YouTube rate limiting, video and subtitles must be downloaded separately.
+
 ```bash
-# Download with subtitles (gets both manual and auto-generated if available)
-ytd https://youtube.com/watch?v=VIDEO_ID -s --sub-langs en
+# Step 1: Download the video
+ytd https://youtube.com/watch?v=VIDEO_ID
+
+# Step 2: Download subtitles separately
+ytd https://youtube.com/watch?v=VIDEO_ID -s --sub-langs en --skip-download
 
 # Download specific languages (comma-separated)
-ytd https://youtube.com/watch?v=VIDEO_ID -s --sub-langs en,es,fr,de
+ytd https://youtube.com/watch?v=VIDEO_ID -s --sub-langs en,es,fr,de --skip-download
 
-# Download ALL available subtitles (both manual and auto-generated)
-ytd https://youtube.com/watch?v=VIDEO_ID -s --sub-langs all
+# Download ALL available subtitles
+ytd https://youtube.com/watch?v=VIDEO_ID -s --sub-langs all --skip-download
 
-# Download ONLY subtitles without video/audio
-ytd https://youtube.com/watch?v=VIDEO_ID -s --sub-langs hr --skip-download
+# Convert subtitles to SRT during download
+ytd https://youtube.com/watch?v=VIDEO_ID -s --sub-langs hr --skip-download --convert-subs srt
 ```
 
 **Note**: The tool now automatically downloads whatever subtitles are available (manual or auto-generated) for the requested languages. If manual subtitles aren't available, it will download auto-generated ones.
@@ -615,20 +621,24 @@ ytd https://youtube.com/playlist?list=PLAYLIST_ID -p -a --audio-format mp3
 # List all available subtitles for a video
 ytd https://youtube.com/watch?v=VIDEO_ID --list-subs
 
-# Download video with English and Spanish subtitles
-ytd https://youtube.com/watch?v=VIDEO_ID -s --sub-langs en,es
+# Download video first
+ytd https://youtube.com/watch?v=VIDEO_ID
 
-# Download video with ALL available subtitles (manual + auto-generated)
-ytd https://youtube.com/watch?v=VIDEO_ID -s --sub-langs all
+# Then download subtitles separately (due to rate limiting)
+ytd https://youtube.com/watch?v=VIDEO_ID -s --sub-langs en --skip-download
 
-# Download ONLY subtitles (no video)
-ytd https://youtube.com/watch?v=VIDEO_ID -s --sub-langs hr --skip-download
+# Download multiple language subtitles
+ytd https://youtube.com/watch?v=VIDEO_ID -s --sub-langs en,es,fr --skip-download
 
-# Download playlist with subtitles
-ytd https://youtube.com/playlist?list=PLAYLIST_ID -p -s --sub-langs en
+# Download ALL available subtitles
+ytd https://youtube.com/watch?v=VIDEO_ID -s --sub-langs all --skip-download
 
-# Download with automatic SRT conversion
-ytd https://youtube.com/watch?v=VIDEO_ID -s --sub-langs en --convert-subs srt
+# Download subtitles with automatic SRT conversion
+ytd https://youtube.com/watch?v=VIDEO_ID -s --sub-langs en --skip-download --convert-subs srt
+
+# For playlists: download videos first, then subtitles
+ytd https://youtube.com/playlist?list=PLAYLIST_ID -p
+ytd https://youtube.com/playlist?list=PLAYLIST_ID -p -s --sub-langs en --skip-download
 ```
 
 ### Working with subtitles
@@ -707,9 +717,10 @@ ytd https://youtube.com/playlist?list=PLAYLIST_ID -p --archive downloaded.txt
    - Update certificates or use `--no-check-certificate` (not recommended)
 
 5. **HTTP 429 Too Many Requests**
-   - YouTube rate limiting when downloading video + subtitles
-   - Solution: Download subtitles separately with `--skip-download`
-   - Example: `ytd URL -s --sub-langs en --skip-download`
+   - YouTube rate limiting prevents downloading video + subtitles together
+   - The tool now enforces separate downloads:
+     1. Download video: `ytd URL`
+     2. Download subtitles: `ytd URL -s --sub-langs en --skip-download`
 
 ### Docker/Podman Issues
 
