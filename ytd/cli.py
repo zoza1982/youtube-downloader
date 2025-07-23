@@ -14,6 +14,18 @@ from . import __version__
 
 init(autoreset=True)  # Initialize colorama
 
+# Handle Windows encoding issues
+if sys.platform.startswith('win'):
+    try:
+        # Try to set UTF-8 encoding for better Unicode support
+        if hasattr(sys.stdout, 'reconfigure'):
+            sys.stdout.reconfigure(encoding='utf-8')
+        if hasattr(sys.stderr, 'reconfigure'):
+            sys.stderr.reconfigure(encoding='utf-8')
+    except:
+        # If that fails, we'll use ASCII-safe characters in print functions
+        pass
+
 
 def create_parser() -> argparse.ArgumentParser:
     """Create and configure argument parser"""
@@ -197,19 +209,29 @@ def validate_url(url: str) -> bool:
     return result is True
 
 
+def safe_print(text: str, file=None) -> None:
+    """Safely print text, handling encoding issues on Windows"""
+    try:
+        print(text, file=file)
+    except UnicodeEncodeError:
+        # Fallback to ASCII-safe version
+        ascii_text = text.encode('ascii', 'replace').decode('ascii')
+        print(ascii_text, file=file)
+
+
 def print_error(message: str) -> None:
     """Print error message in red"""
-    print(f"{Fore.RED}Error: {message}{Style.RESET_ALL}", file=sys.stderr)
+    safe_print(f"{Fore.RED}Error: {message}{Style.RESET_ALL}", file=sys.stderr)
 
 
 def print_success(message: str) -> None:
     """Print success message in green"""
-    print(f"{Fore.GREEN}✓ {message}{Style.RESET_ALL}")
+    safe_print(f"{Fore.GREEN}✓ {message}{Style.RESET_ALL}")
 
 
 def print_info(message: str) -> None:
     """Print info message in blue"""
-    print(f"{Fore.BLUE}ℹ {message}{Style.RESET_ALL}")
+    safe_print(f"{Fore.BLUE}ℹ {message}{Style.RESET_ALL}")
 
 
 def main() -> int:
