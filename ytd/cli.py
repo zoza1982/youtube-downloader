@@ -192,7 +192,9 @@ def validate_url(url: str) -> bool:
     """Validate URL - now supports all sites that yt-dlp supports"""
     # Just check if it's a valid URL format
     # yt-dlp will handle checking if the site is supported
-    return validators.url(url)
+    result = validators.url(url)
+    # validators.url() returns True for valid URLs and ValidationError for invalid ones
+    return result is True
 
 
 def print_error(message: str) -> None:

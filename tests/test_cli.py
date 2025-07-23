@@ -49,8 +49,11 @@ class TestCLI:
         
         # Invalid URLs
         assert validate_url('not-a-url') is False
-        assert validate_url('https://example.com') is False
         assert validate_url('') is False
+        
+        # Valid URLs from other supported sites
+        assert validate_url('https://vimeo.com/123456') is True
+        assert validate_url('https://example.com') is True  # Valid URL format
     
     @patch('ytd.cli.YouTubeDownloader')
     def test_main_success(self, mock_downloader):
